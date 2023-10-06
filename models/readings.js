@@ -1,8 +1,8 @@
-const { connectProduct } = require("../db");
+const { connectLocal } = require("../db2");
 
 const mongoose = require("mongoose");
 
-const controllerReadingsSchema = new mongoose.Schema(
+const readingsModel = new mongoose.Schema(
   {
     _id: {
       type: mongoose.Types.ObjectId,
@@ -916,9 +916,10 @@ const controllerReadingsSchema = new mongoose.Schema(
   {
     collection: "ControllerReadings",
   },
-  { versionKey: false }
+  { versionKey: false },
+  { skipVersioning: { dontVersionMe: true } }
 );
 
-const ControllerReadingsModel = connectProduct.model("ControllerReadings", controllerReadingsSchema);
+const ReadingsModel = connectLocal.model("ControllerReadings", readingsModel);
 
-module.exports = ControllerReadingsModel;
+module.exports = ReadingsModel;
