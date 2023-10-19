@@ -1,7 +1,6 @@
-const { connectProduct } = require("../db");
-const { connectLocal } = require("../db2");
+import { connectProductionMongo, connectLocationMongo } from "../middleware/db";
 
-const mongoose = require("mongoose");
+import mongoose, { Document, model, Schema } from "mongoose";
 
 const SystemEventLogSchema = new mongoose.Schema(
   {
@@ -72,11 +71,10 @@ const SystemEventLogSchema = new mongoose.Schema(
   },
   {
     collection: "SystemEventLog",
-  },
-  { versionKey: false }
+  }
 );
 
-const SystemEventLogsModel = connectProduct.model("SystemEventLog", SystemEventLogSchema);
-const LocalSystemEventLogsModel = connectLocal.model("SystemEventLog", SystemEventLogSchema);
+export const SystemEventLogsModel = connectProductionMongo.model("SystemEventLog", SystemEventLogSchema);
+export const LocalSystemEventLogsModel = connectLocationMongo.model("SystemEventLog", SystemEventLogSchema);
 
-module.exports = { SystemEventLogsModel, LocalSystemEventLogsModel };
+//module.exports = { SystemEventLogsModel, LocalSystemEventLogsModel };
