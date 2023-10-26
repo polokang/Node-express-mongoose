@@ -1,6 +1,10 @@
 import { connectProductionMongo, connectLocationMongo } from "../middleware/db";
 
-import mongoose, { Document, model, Schema } from "mongoose";
+import mongoose, { Document } from "mongoose";
+
+export interface ISystemEventLog extends Document {
+  [key: string]: any;
+}
 
 const SystemEventLogSchema = new mongoose.Schema(
   {
@@ -8,73 +12,13 @@ const SystemEventLogSchema = new mongoose.Schema(
       type: mongoose.Types.ObjectId,
       default: null,
     },
-    cmdStr: {
-      type: String,
-      default: null,
-    },
-    DateLoggedStr: {
-      type: Date,
-      default: null,
-    },
-    MsgRef: {
-      type: Number,
-      default: null,
-    },
-    UnitId: {
-      type: Number,
-      default: null,
-    },
-    DebugInfo: {
-      type: String,
-      default: null,
-    },
-    DateLogged: {
-      type: Date,
-      default: null,
-    },
-    SerialNo: {
-      type: Number,
-      default: null,
-    },
-    isAck: {
-      type: Number,
-      default: null,
-    },
-    unixTimeStamp: {
-      type: Number,
-      default: null,
-    },
-    DateLoggedServer: {
-      type: Date,
-      default: null,
-    },
-    DateLoggedString: {
-      type: Date,
-      default: null,
-    },
-    cmd: {
-      type: Number,
-      default: null,
-    },
-    EvtId: {
-      type: Number,
-      default: null,
-    },
-    Msg: {
-      type: String,
-      default: null,
-    },
-    DateLoggedUnix: {
-      type: Number,
-      default: null,
-    },
   },
   {
     collection: "SystemEventLog",
+    versionKey: false,
+    strict: false,
   }
 );
 
 export const SystemEventLogsModel = connectProductionMongo.model("SystemEventLog", SystemEventLogSchema);
 export const LocalSystemEventLogsModel = connectLocationMongo.model("SystemEventLog", SystemEventLogSchema);
-
-//module.exports = { SystemEventLogsModel, LocalSystemEventLogsModel };

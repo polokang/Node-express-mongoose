@@ -1,11 +1,11 @@
 import { connectProductionMongo, connectLocationMongo } from "../middleware/db";
-import mongoose, { Document, Schema } from "mongoose";
+import mongoose, { Document } from "mongoose";
 
-export interface IActUserDoc extends Document {
+export interface IAuditLogsDoc extends Document {
   [key: string]: any;
 }
 
-const ActUserSchema = new mongoose.Schema(
+const AuditLogsSchema = new mongoose.Schema(
   {
     _id: {
       type: mongoose.Types.ObjectId,
@@ -13,11 +13,11 @@ const ActUserSchema = new mongoose.Schema(
     },
   },
   {
-    collection: "Act_User",
+    collection: "AuditLogs",
     versionKey: false,
     strict: false,
   }
 );
 
-export const ActUser = connectProductionMongo.model<IActUserDoc>("Act_User", ActUserSchema);
-export const LocalActUser = connectLocationMongo.model<IActUserDoc>("Act_User", ActUserSchema);
+export const AuditLogs = connectProductionMongo.model<IAuditLogsDoc>("AuditLogs", AuditLogsSchema);
+export const LocalAuditLogs = connectLocationMongo.model<IAuditLogsDoc>("AuditLogs", AuditLogsSchema);

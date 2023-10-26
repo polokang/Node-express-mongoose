@@ -43,5 +43,5 @@ const AuditLogsSchema = new mongoose.Schema(
   }
 );
 
-export const AuditLogsModel = connectProductionMongo.model<UserLog>("AuditLogs", AuditLogsSchema);
-export const LocalAuditLogsModel = connectLocationMongo.model<UserLog>("AuditLogs", AuditLogsSchema);
+//export const AuditLogsModel = connectProductionMongo.model<UserLog>("AuditLogs", AuditLogsSchema);
+//export const LocalAuditLogsModel = connectLocationMongo.model<UserLog>("AuditLogs", AuditLogsSchema);

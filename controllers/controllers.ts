@@ -3,45 +3,63 @@ import express, { Request, Response } from "express";
 // const ControllerReadingsModel = require("../models/controller");
 // const ReadingsModel = require("../models/readings");
 // const { DatalogData30MinModel, LocalDataLogsModel } = require("../models/datalog30mins");
-import { SystemEventLogsModel, LocalSystemEventLogsModel } from "../models/systemeventlog";
-import { ReadingsModel, LocalReadingsModel, IControllerReadings } from "../models/controllerreadings";
-import { ThirtyMinsLogModel, LocalThirtyMinsLogModel } from "../models/thirtyminslog";
-import { AuditLogsModel, LocalAuditLogsModel } from "../models/userlog";
-import { ActUser, LocalActUser } from "../models/AuditLogs";
-
-// http://localhost:3000/insertevents?id=660090
-export const insertEvents = async (req: Request, res: Response) => {
-  const { id } = req.query;
-  console.log("==>", id);
-  try {
-    const datalogs = await SystemEventLogsModel.find({ UnitId: id });
-    let result = null;
-    datalogs.forEach(async (item) => {
-      let readings = new LocalSystemEventLogsModel(item);
-      console.log(item);
-      //result = await readings.save();
-    });
-
-    res.status(200).json(datalogs.length);
-  } catch (error) {
-    res.status(403).json("System error");
-  }
-};
+import { SystemEventLogsModel, LocalSystemEventLogsModel } from "../models/SystemEventLog";
+import { ControllerReadings, LocalControllerReadings } from "../models/ControllerReadings";
+import { DatalogData30Min, LocalDatalogData30Min } from "../models/DatalogData30Min";
+import { AuditLogs, LocalAuditLogs } from "../models/AuditLogs";
+import { ControllerSettings, LocalControllerSettings } from "../models/ControllerSettings";
+import { DatalogDataOneMin } from "../models/DatalogDataOneMin";
 
 function getUnixTimeForDate(year: number, month: number, day: number): number {
   const specificDate = new Date(year, month - 1, day, 0, 0, 0, 0); // Month is 0-indexed
   return Math.floor(specificDate.getTime() / 1000); // Convert to Unix timestamp (seconds)
 }
 
-// http://localhost:3000/getthirtypoints?id=660090
+export const getoneMinsData = async (req: Request, res: Response) => {
+  try {
+    const oneMinsData = await DatalogDataOneMin.find({ UnitId: 660090, DateLogged: { $gte: new Date("2023-10-20 00:00:00"), $lt: new Date("2023-10-24 00:00:00") } }).select(
+      "ORP pH"
+    );
+
+    res.status(200).json(oneMinsData);
+  } catch (error) {
+    res.status(403).json("System error");
+  }
+};
+
+// http://localhost:3000/insertevents?id=660090
+export const insertEvents = async (req: Request, res: Response) => {
+  const { id } = req.query;
+  let startOfToday = getUnixTimeForDate(2023, 1, 1);
+  let endOfToday = getUnixTimeForDate(2023, 1, 31); // 今天结束的时间
+  for (let i = 1; i < 30; i++) {
+    try {
+      startOfToday = getUnixTimeForDate(2023, 1, i);
+      endOfToday = getUnixTimeForDate(2023, 1, i + 1);
+      const datalogs = await SystemEventLogsModel.find({ DateLoggedUnix: { $gt: startOfToday, $lte: endOfToday } });
+      let result = null;
+      datalogs.forEach(async (item) => {
+        let readings = new LocalSystemEventLogsModel(item.toObject());
+        result = await readings.save();
+      });
+      console.log(i + ":" + datalogs.length + ":" + startOfToday + "-" + endOfToday);
+    } catch (error) {
+      res.status(403).json("System error");
+    }
+  }
+
+  res.status(200).json("success");
+};
+
+// http://localhost:3000/660090/getthirtypoints?id=660090
 export const getThirtyPoints = async (req: Request, res: Response) => {
   const { id } = req.query;
-  const today = new Date().getTime();
   const startOfToday = getUnixTimeForDate(2023, 1, 16);
   const endOfToday = getUnixTimeForDate(2023, 10, 17); // 今天结束的时间
+  console.log(id, ":", startOfToday, "-", endOfToday);
   try {
-    const points = await ThirtyMinsLogModel.find({ UnitId: id, DateLoggedUnix: { $gte: startOfToday, $lte: endOfToday } }).select("ORP pH");
-    res.status(200).json(points);
+    const points = await DatalogData30Min.find({ UnitId: 660090, DateLoggedUnix: { $gte: startOfToday, $lte: endOfToday } });
+    res.status(200).json(points.length);
   } catch (error) {
     console.log(error);
     res.status(403).json("System error");
@@ -51,22 +69,12 @@ export const getThirtyPoints = async (req: Request, res: Response) => {
 // http://localhost:3000/660090/insertReadings?id=660090
 export const insertReadings = async (req: Request, res: Response) => {
   const { id } = req.query;
-  console.log("===id==", id);
 
   try {
-    const readings = await ReadingsModel.find({ UnitId: id });
+    const readings = await ControllerReadings.find();
     readings.forEach(async (item) => {
-      let obj = item.toObject();
-      console.log(obj.pH);
-      const { pH, _id, ORP, pHB, WaterUsageMeter } = obj;
-      const readItem: IControllerReadings = {
-        id: _id.toString(),
-        ORP,
-        pH,
-        pHB,
-        WaterUsageMeter,
-      };
-      console.log(readItem);
+      let read = new LocalControllerReadings(item.toObject());
+      let result = await read.save();
     });
 
     res.status(200).json(readings.length);
@@ -75,14 +83,15 @@ export const insertReadings = async (req: Request, res: Response) => {
   }
 };
 
-export const getlogs = async (req: Request, res: Response) => {
+export const insertLogs = async (req: Request, res: Response) => {
   const { id } = req.query;
-  console.log(id);
+  const startOfToday = getUnixTimeForDate(2023, 1, 16);
+  const endOfToday = getUnixTimeForDate(2023, 10, 17); // 今天结束的时间
   try {
-    const logs = await AuditLogsModel.find().limit(10000);
+    const logs = await AuditLogs.find().sort({ EventDateUTC: -1 }).limit(10000);
     logs.forEach(async (item) => {
-      let audilog = new LocalAuditLogsModel(item.toObject());
-      let result = await audilog.save();
+      let auditlog = new LocalAuditLogs(item.toObject());
+      let result = await auditlog.save();
     });
     res.status(200).json(logs.length);
   } catch (error) {
@@ -90,16 +99,15 @@ export const getlogs = async (req: Request, res: Response) => {
   }
 };
 
-export const insertLogs = async (req: Request, res: Response) => {
+export const insertSettings = async (req: Request, res: Response) => {
   const { id } = req.query;
-  console.log(id);
   try {
-    const logs = await ActUser.find().limit(10000);
-    logs.forEach(async (item) => {
-      let audilog = new LocalActUser(item.toObject());
-      let result = await audilog.save();
+    const settings = await ControllerSettings.find().sort({ DateCreatedUnix: -1 }).limit(10000);
+    settings.forEach(async (item) => {
+      let setting = new LocalControllerSettings(item.toObject());
+      let result = await setting.save();
     });
-    res.status(200).json(logs.length);
+    res.status(200).json(settings.length);
   } catch (error) {
     res.status(403).json("System error");
   }
