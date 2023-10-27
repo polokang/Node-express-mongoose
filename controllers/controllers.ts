@@ -54,15 +54,20 @@ export const insertEvents = async (req: Request, res: Response) => {
 // http://localhost:3000/660090/getthirtypoints?id=660090
 export const getThirtyPoints = async (req: Request, res: Response) => {
   const { id } = req.query;
-  const startOfToday = getUnixTimeForDate(2023, 1, 16);
-  const endOfToday = getUnixTimeForDate(2023, 10, 17); // 今天结束的时间
-  console.log(id, ":", startOfToday, "-", endOfToday);
-  try {
-    const points = await DatalogData30Min.find({ UnitId: 660090, DateLoggedUnix: { $gte: startOfToday, $lte: endOfToday } });
-    res.status(200).json(points.length);
-  } catch (error) {
-    console.log(error);
-    res.status(403).json("System error");
+  if (
+    typeof id === "string" &&
+    /^(6|3|9)\d{5}$/.test(id) // 正则表达式匹配 6、3 或 9 开头的 6 位数字
+  ) {
+    const numericId = Number(id);
+    try {
+      const points = await DatalogData30Min.find({ UnitId: numericId, DateLogged: { $gte: new Date("2023-10-21 00:00:00"), $lt: new Date("2023-10-22 00:00:00") } }).select("ORP pH");
+      res.status(200).json(points);
+    } catch (error) {
+      console.log(error);
+      res.status(403).json("System error");
+    }
+  } else {
+    res.status(400).send("Invalid ID format");
   }
 };
 
